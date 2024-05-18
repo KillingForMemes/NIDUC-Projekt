@@ -5,10 +5,9 @@ import hashlib
 import os
 import random
 import unittest
+import csv
 
 import bchlib
-
-delta = 0   # additional errors
 
 class BCHTestCase(unittest.TestCase):
     def exercise(*args, **kwargs):
@@ -82,30 +81,70 @@ def test_t_eq_511():
     # 511 = 2^m - 1 -> m = 9
     # t = ilosc bledow do poprawy (max 31)
     # t = (n-k)/m = 2
-    failed_tests = 0
-    total_tests = 10000
-    for i in range(total_tests):
-        try:
-            if not BCHTestCase.exercise(t=2, m=9):
-                failed_tests += 1
-        except Exception as e:
-            print(f"Test {i+1} failed with exception: {e}")
-    print(f"Failed tests for BCH(511, 493): {failed_tests}/{total_tests}")
+    max_t = 56
+    result = []
+    for i in range(1, max_t + 1):
+        failed_tests = 0
+        for j in range(test_count):
+            try:
+                if not BCHTestCase.exercise(t=i, m=9):
+                    failed_tests += 1
+            except Exception as e:
+                print(f"Test {j+1} failed with exception: {e}")
+        result.append([i, (test_count - failed_tests) / test_count])
+    return result
 
 # BCH(255, 223)
 def test_t_eq_255():
-    # 255 = 2^m -> m = 8
+    # 255 = 2^m - 1 -> m = 8
     # t = 4
-    failed_tests = 0
-    total_tests = 1000
-    for i in range(total_tests):
-        try:
-            if not BCHTestCase.exercise(t=15, m=8):
-                failed_tests += 1
-        except Exception as e:
-            print(f"Test {i+1} failed with exception: {e}")
-    print(f"Failed tests for BCH(255, 223): {failed_tests}/{total_tests}")
+    max_t = 31
+    result = []
+
+    for i in range(1, max_t + 1):
+        failed_tests = 0
+        for j in range(test_count):
+            try:
+                if not BCHTestCase.exercise(t=i, m=8):
+                    failed_tests += 1
+            except Exception as e:
+                print(f"Test {j+1} failed with exception: {e}")
+        result.append([i, (test_count - failed_tests) / test_count])
+    return result
+
+# BCH(31, 26)
+def test_t_eq_15():
+    # 255 = 2^m - 1 -> m = 8
+    # t = 4
+    max_t = 5
+    result = []
+
+    for i in range(1, max_t + 1):
+        failed_tests = 0
+        for j in range(test_count):
+            try:
+                if not BCHTestCase.exercise(t=i, m=5):
+                    failed_tests += 1
+            except Exception as e:
+                print(f"Test {j+1} failed with exception: {e}")
+        result.append([i, (test_count - failed_tests) / test_count])
+    return result
+
+delta = 0   # additional errors
+test_count = 1000
+
+def save_to_file(filename, data):
+    with open(filename, mode="w", newline = "") as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
 
 if __name__ == '__main__':
-    test_t_eq_511()
-    #test_t_eq_255()
+    result = test_t_eq_511()
+    #result2 = test_t_eq_255()
+    #result3 = test_t_eq_15()
+    
+    save_to_file("bch511.csv", result)
+    #save_to_file("bch255.csv", result2)
+    #save_to_file("bch31.csv",result3)
+        
+   
