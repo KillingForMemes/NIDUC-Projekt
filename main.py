@@ -6,6 +6,7 @@ import os
 import random
 import unittest
 import csv
+import math
 
 import bchlib
 
@@ -39,9 +40,25 @@ class BCHTestCase(unittest.TestCase):
             bit_num = random.randint(0, 7)
             packet[byte_num] ^= (1 << bit_num)
 
-        # make BCH_BITS errors
-        for _ in range(bch.t + delta):
-            bitflip(packet)
+        def groupflip(packet, max_error: int):
+            max_byte = math.floor(((len(packet)) * 8 - max_error) / 8)
+            print(max_byte)
+            byte_num = random.randint(0, max_byte - 1)
+            bit_num = 0
+            for i in range(max_error):
+                packet[byte_num] ^= (1 << bit_num)
+                bit_num += 1
+                if(bit_num >= 8):
+                    bit_num = 0
+                    byte_num += 1
+
+        if ERROR_GENERATION_METHOD == 0:
+            # make BCH_BITS errors
+            for _ in range(bch.t + delta):
+                bitflip(packet)
+        else:
+            print(len(packet))
+            groupflip(packet, bch.t)
 
         # print hash of packet
         sha1_corrupt = hashlib.sha1(packet)
@@ -130,20 +147,36 @@ def test_t_eq_15():
         result.append([i, (test_count - failed_tests) / test_count])
     return result
 
-delta = 0   # additional errors
-test_count = 1000
-
 def save_to_file(filename, data):
     with open(filename, mode="w", newline = "") as file:
             writer = csv.writer(file)
             writer.writerows(data)
 
-if __name__ == '__main__':
+
+delta = 0   # additional errors
+test_count = 1000
+
+# 0 for random bitflips
+# 1 for a group error
+ERROR_GENERATION_METHOD = 1 
+
+def test_errors(_error_generation_method):
+    ERROR_GENERATION_METHOD = _error_generation_method
     result = test_t_eq_511()
-    #result2 = test_t_eq_255()
-    #result3 = test_t_eq_15()
+    result2 = test_t_eq_255()
+    result3 = test_t_eq_15()
     
-    save_to_file("bch511.csv", result)
-    #save_to_file("bch255.csv", result2)
-    #save_to_file("bch31.csv",result3)
-        
+    save_to_file("bch511_" + str(ERROR_GENERATION_METHOD) + ".csv", result)
+    save_to_file("bch255_" + str(ERROR_GENERATION_METHOD) + ".csv", result2)
+    save_to_file("bch31_" + str(ERROR_GENERATION_METHOD) + ".csv",result3)
+
+
+
+if __name__ == '__main__':
+    # Testowanie dla bledow losowych
+    test_errors(0)
+
+    # Testowanie dla bledow tworzonych grupowo 
+    # (zmieniamy bity na przeciwne w losowym segmencie)
+    test_errors(1)
+      
